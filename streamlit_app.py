@@ -3,16 +3,20 @@ from PIL import Image
 import io
 import zipfile
 
-st.title("🖼️ Image Resizer + Compressor")
+st.title("🖼️ Image Tool (Resize + Compress + Pixel Info)")
 
-# 👉 Upload multiple images
+# ==============================
+# 🔹 Upload multiple images
+# ==============================
 uploaded_files = st.file_uploader(
     "Upload Images",
     type=["jpg", "jpeg", "png", "webp"],
     accept_multiple_files=True
 )
 
-# 👉 Resize inputs
+# ==============================
+# 🔹 Resize Settings
+# ==============================
 st.subheader("📏 Resize Settings")
 col1, col2 = st.columns(2)
 with col1:
@@ -20,10 +24,15 @@ with col1:
 with col2:
     height = st.number_input("Height", min_value=1, value=600)
 
-# 👉 Compression slider
+# ==============================
+# 🔹 Compression Settings
+# ==============================
 st.subheader("🗜️ Compression Settings")
 quality = st.slider("Image Quality (Lower = More Compression)", 10, 100, 80)
 
+# ==============================
+# 🔹 Process Button
+# ==============================
 if uploaded_files:
     st.write(f"✅ {len(uploaded_files)} images uploaded")
 
@@ -35,16 +44,16 @@ if uploaded_files:
                 try:
                     img = Image.open(file)
 
-                    # 👉 Resize
+                    # Resize
                     resized_img = img.resize((width, height))
 
                     img_bytes = io.BytesIO()
 
-                    # 👉 Handle format
+                    # Compression
                     if file.type == "image/png":
                         resized_img.save(img_bytes, format="PNG", optimize=True)
                     else:
-                        resized_img = resized_img.convert("RGB")  # JPG safe
+                        resized_img = resized_img.convert("RGB")
                         resized_img.save(
                             img_bytes,
                             format="JPEG",
@@ -67,3 +76,24 @@ if uploaded_files:
             file_name="processed_images.zip",
             mime="application/zip"
         )
+
+# =========================================
+# 🔥 NEW SECTION: Pixel Size Detector
+# =========================================
+st.divider()
+st.subheader("🔍 Check Image Pixel Size")
+
+single_file = st.file_uploader(
+    "Upload a single image to check size",
+    type=["jpg", "jpeg", "png", "webp"],
+    key="single"
+)
+
+if single_file:
+    img = Image.open(single_file)
+
+    width, height = img.size
+
+    st.image(img, caption="Uploaded Image", use_column_width=True)
+
+    st.success(f"📐 Image Size: {width} × {height} pixels")
