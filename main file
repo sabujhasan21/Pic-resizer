@@ -1,37 +1,47 @@
-import os
+import streamlit as st
 from PIL import Image
+import io
+import zipfile
 
-# 👉 Input & Output folder
-input_folder = "input_images"
-output_folder = "output_images"
+st.title("🖼️ Batch Image Resizer")
 
-# 👉 User input for size
-width = int(input("Enter width: "))
-height = int(input("Enter height: "))
-new_size = (width, height)
+# 👉 Upload multiple images
+uploaded_files = st.file_uploader(
+    "Upload Images", type=["jpg", "jpeg", "png", "webp"], accept_multiple_files=True
+)
 
-# 👉 Create output folder if not exists
-if not os.path.exists(output_folder):
-    os.makedirs(output_folder)
+# 👉 Size input
+col1, col2 = st.columns(2)
+with col1:
+    width = st.number_input("Width", min_value=1, value=800)
+with col2:
+    height = st.number_input("Height", min_value=1, value=600)
 
-# 👉 Supported formats
-formats = (".jpg", ".jpeg", ".png", ".bmp", ".webp")
+if uploaded_files:
+    st.write(f"✅ {len(uploaded_files)} images uploaded")
 
-# 👉 Loop through images
-for filename in os.listdir(input_folder):
-    if filename.lower().endswith(formats):
-        img_path = os.path.join(input_folder, filename)
-        
-        try:
-            with Image.open(img_path) as img:
-                resized_img = img.resize(new_size)
+    if st.button("Resize Images"):
+        zip_buffer = io.BytesIO()
 
-                save_path = os.path.join(output_folder, filename)
-                resized_img.save(save_path)
+        with zipfile.ZipFile(zip_buffer, "a") as zip_file:
+            for file in uploaded_files:
+                try:
+                    img = Image.open(file)
+                    resized_img = img.resize((width, height))
 
-                print(f"Resized: {filename}")
+                    img_bytes = io.BytesIO()
+                    resized_img.save(img_bytes, format="PNG")
+                    
+                    zip_file.writestr(file.name, img_bytes.getvalue())
 
-        except Exception as e:
-            print(f"Error processing {filename}: {e}")
+                except Exception as e:
+                    st.error(f"Error processing {file.name}: {e}")
 
-print("✅ All images resized successfully!")
+        zip_buffer.seek(0)
+
+        st.download_button(
+            label="📥 Download All Resized Images (ZIP)",
+            data=zip_buffer,
+            file_name="resized_images.zip",
+            mime="application/zip"
+        )
